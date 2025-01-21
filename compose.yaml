@@ -1,0 +1,9 @@
+version: "3.8"
+services:
+  app:
+    build: .
+    volumes:
+      - .:/cli_app     
+    container_name: g01-67_01   
+    stdin_open: true        # เปิด stdin
+    tty: true               # เปิด tty สำหรับรับคำสั่ง
