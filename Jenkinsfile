@@ -4,14 +4,14 @@ pipeline {
   environment {
     VERSION = "1.0.${BUILD_NUMBER}"
     IMAGE_NAME = "nexus:8082/docker-hosted/cli-exc:${VERSION}"
-    GITOPS_REPO = "https://github.com/6510685016/gitops-repo.git"
+    GITOPS_REPO = "https://github.com/6510685016/CLA-Exchange-Rate"
     CHART_PATH = "helm/cli-exc/values.yaml"
   }
 
   stages {
     stage('Checkout') {
       steps {
-        git url: 'https://github.com/cn330/g01-67_01.git'
+        git url: 'https://github.com/6510685016/CLA-Exchange-Rate'
       }
     }
 
