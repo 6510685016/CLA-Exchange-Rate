@@ -3,8 +3,8 @@ pipeline {
 
   environment {
     VERSION = "1.0.${BUILD_NUMBER}"
-    IMAGE_NAME = "nexus:8082/docker-hosted/cli-exc:${VERSION}"
-    GITOPS_REPO = "https://github.com/6510685016/CLA-Exchange-Rate"
+    IMAGE_NAME = "10.0.2.5:8082/docker-hosted/cli-exc:${VERSION}"
+    GITOPS_REPO = "https://github.com/6510685016/gitops-repo.git"
     CHART_PATH = "helm/cli-exc/values.yaml"
   }
 
@@ -21,15 +21,20 @@ pipeline {
       }
     }
 
-    stage('Scan with Trivy') {
+    stage('Trivy Scan') {
       steps {
         sh 'trivy image --exit-code 0 --severity HIGH,CRITICAL $IMAGE_NAME'
       }
     }
 
-    stage('Push Image to Nexus') {
+    stage('Push to Nexus') {
       steps {
-        sh 'docker push $IMAGE_NAME'
+        withCredentials([usernamePassword(credentialsId: 'nexus-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+          sh '''
+            echo "$PASS" | docker login 10.0.2.5:8082 -u "$USER" --password-stdin
+            docker push $IMAGE_NAME
+          '''
+        }
       }
     }
 
@@ -37,14 +42,14 @@ pipeline {
       steps {
         sh '''
           rm -rf gitops-repo
-          git clone $GITOPS_REPO
+          git clone --depth 1 $GITOPS_REPO
           cd gitops-repo
 
-          sed -i "s/tag: .*/tag: \\\"$VERSION\\\"/" $CHART_PATH
+          sed -i "s/tag: .*/tag: \\"$VERSION\\"/" $CHART_PATH
 
           git config user.email "jenkins@example.com"
           git config user.name "Jenkins Bot"
-          git commit -am "Update CLI image tag to $VERSION"
+          git commit -am "🔁 Update image tag to $VERSION"
           git push
         '''
       }
@@ -53,10 +58,10 @@ pipeline {
 
   post {
     success {
-      echo "✅ Deploy tag $VERSION successfully updated."
+      echo "✅ Deploy tag $VERSION pushed to GitOps repo"
     }
     failure {
-      echo "❌ Pipeline failed."
+      echo "❌ Pipeline failed. Check logs."
     }
   }
 }
